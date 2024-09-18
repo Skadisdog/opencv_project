@@ -1,0 +1,50 @@
+# C++ specific ignores
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+
+# CMake specific ignores
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Build directory
+build/
+
+# Ignore all files in output except images
+output/*
+!output/*.png
+!output/*.jpg
+
+# Visual Studio Code specific ignores
+.vscode/
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/c_cpp_properties.json
+
+# Linux specific ignores
+*~
+*.swp
+*.swo
+.DS_Store
+._*
+
+# Logs and databases
+*.log
+
+# Backup files
+*.bak
+*.tmp
+*.old
+*.orig
+
+# By default, ignore all hidden files and directories
+.*
+!/.gitignore
