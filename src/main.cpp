@@ -8,19 +8,19 @@ int output(cv::Mat image, string outputPath);
 int main(){
     // 读取图像
     cv::Mat image = cv::imread("..//resources//test_image.png", cv::IMREAD_COLOR);
-    output(image, "origin.png");
+    output(image, "..//output//origin.png");
     cv::Mat grayImage;
     cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY); // 转换为灰度图像
-    output(grayImage, "grey.png");
+    output(grayImage, "..//output//grey.png");
     cv::Mat hsvImage;
     cv::cvtColor(image, hsvImage, cv::COLOR_BGR2HSV); // 转换为hsv
-    output(hsvImage, "hsv.png");
+    output(hsvImage, "..//output//hsv.png");
     cv::Mat blurImage;
     cv::blur(image, blurImage, cv::Size(10, 10)); // 均值滤波 内核10X10
-    output(blurImage, "blur.png");
+    output(blurImage, "..//output//blur.png");
     cv::Mat gaussianBlurredImage;
     cv::GaussianBlur(image, gaussianBlurredImage, cv::Size(9, 9), 1.5); // 高斯滤波
-    output(gaussianBlurredImage, "Gaussianblur.png");
+    output(gaussianBlurredImage, "..//output//Gaussianblur.png");
     cv::Mat redBGRImage;
     cv::Mat mask; // 掩码，就是一张黑白图像，像是粥解包出来的通道图一样
     cv::Scalar lowerRed(0, 0, 100); // 红色的下限
@@ -29,7 +29,7 @@ int main(){
     cv::inRange(image, lowerRed, upperRed, mask);
     // 提取红色区域
     cv::bitwise_and(image, image, redBGRImage, mask);
-    output(redBGRImage, "red BGR.png");
+    output(redBGRImage, "..//output//red BGR.png");
     // 定义红色的HSV范围
     cv::Scalar lowerRed1(0, 100, 100);
     cv::Scalar upperRed1(10, 255, 255);
@@ -43,7 +43,7 @@ int main(){
     // 提取红色区域
     cv::Mat redHSVImage;
     cv::bitwise_and(image, image, redHSVImage, mask);
-    output(redHSVImage, "red HSV.png");
+    output(redHSVImage, "..//output//red HSV.png");
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
     // 找到外轮廓
