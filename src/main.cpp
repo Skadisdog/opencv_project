@@ -44,19 +44,59 @@ int main(){
     cv::Mat redHSVImage;
     cv::bitwise_and(image, image, redHSVImage, mask);
     output(redHSVImage, "..//output//red HSV.png");
+    cv::Mat maskToContours = mask.clone();
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
     // 找到外轮廓
-    cv::findContours(mask, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(maskToContours, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    // RETR_EXTERNAL 只找外轮廓
+    // CHAIN_APPROX_SIMPLE 压缩找的contours的点的数量
+    // 原始图像会被修改，所以要复制一份
     // 绘制外轮廓到一个新的图像上
+    //cv::Mat contourImage = image.clone();
     cv::Mat contourImage = cv::Mat::zeros(mask.size(), CV_8UC3);
-    cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 255, 0), 2); // 绿色轮廓，线宽2
+    cv::Mat imageWithBoundingBox = image.clone();
+    int contourIdx = 0;
+        for (size_t i = 0; i < contours.size(); i++)
+    {
+        double area = cv::contourArea(contours[i]);
+        // 过滤掉面积过小的轮廓
+        if (area > 10) // 可以根据具体情况调整阈值
+        {
+            // 画外接矩形
+            cv::Rect boundingBox = cv::boundingRect(contours[i]);
+            cv::rectangle(imageWithBoundingBox, boundingBox, cv::Scalar(0, 255, 0), 1); // 绿色边界框，线宽1
+            // 画轮廓
+            cv::drawContours(contourImage, contours, (int)i, cv::Scalar(0, 255, 0), 1.2);
+
+            // 创建一个掩码图像用于距离变换
+            cv::Mat contourMask = cv::Mat::zeros(mask.size(), CV_8UC1);
+            cv::drawContours(contourMask, contours, (int)i, cv::Scalar(255), cv::FILLED); // 填充
+
+            // 距离变换
+            cv::Mat distTransform;
+            cv::distanceTransform(contourMask, distTransform, cv::DIST_L2, 5);
+
+            // 找到距离变换图像中的最大值及其位置
+            double maxVal;
+            cv::Point maxLoc;
+            cv::minMaxLoc(distTransform, nullptr, &maxVal, nullptr, &maxLoc);
+
+            // 在轮廓上编号
+            cv::putText(contourImage, std::to_string(contourIdx), maxLoc, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 0.5);
+
+            // 输出编号和对应的轮廓面积
+            cout << "Contour #" << contourIdx << " area: " << area << endl;
+
+            contourIdx++;
+        }
+    }
+    output(contourImage, "..//output//contour.png");
+    output(imageWithBoundingBox, "..//output//bounding box.png");
     return 0;
 }
 int output(cv::Mat image, string outputPath){
-    if (cv::imwrite(outputPath, image)) {
-        cout << "Image saved successfully to " << outputPath << endl;
-    } else {
+    if (!cv::imwrite(outputPath, image)) {
         cerr << "Failed to save the image" << endl;
     }
     return 0;
