@@ -97,7 +97,7 @@ int main(){
 }
 int output(cv::Mat image, string outputPath){
     if (!cv::imwrite(outputPath, image)) {
-        cerr << "Failed to save the image" << endl;
+        cerr << "Failed to save the image:" << outputPath << endl;
     }
     return 0;
 }
