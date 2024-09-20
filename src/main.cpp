@@ -61,7 +61,7 @@ int main(){
     {
         double area = cv::contourArea(contours[i]);
         // 过滤掉面积过小的轮廓
-        if (area > 10) // 可以根据具体情况调整阈值
+        if (area > 10)
         {
             // 画外接矩形
             cv::Rect boundingBox = cv::boundingRect(contours[i]);
@@ -128,14 +128,14 @@ int main(){
     // 设置种子点
     cv::Point seedPoint(0, 0); // 根据需要调整种子点的位置
 
-    // 设置填充颜色（对于二值图像，填充颜色为0或255）
-    int newColor = 128; // 中间灰色
+    // 设置填充颜色
+    int newColor = 128; // 灰色
 
-    // 定义填充的阈值范围（对于二值图像，通常设置为0）
+    // 定义填充的阈值范围
     int loDiff = 0;
     int upDiff = 0;
 
-    // 漫水填充
+    // 漫水
     cv::Mat dst = secondEroded.clone();
     cv::floodFill(  
                     dst, 
@@ -169,10 +169,10 @@ int main(){
     cv::Point2f centerToRatate(image.cols / 2.0, image.rows / 2.0);
 
     // 设置旋转角度
-    double angle = 35.0; // 旋转角度，可以根据需要调整
+    double angle = 35.0; // 旋转角度
 
     // 设置缩放比例
-    double scale = 1.0; // 缩放比例，可以根据需要调整
+    double scale = 1.0; // 缩放比例
 
     // 计算旋转矩阵
     cv::Mat rotationMatrix = cv::getRotationMatrix2D(centerToRatate, angle, scale);
@@ -196,6 +196,7 @@ int main(){
 
     // 定义裁剪区域（左上角 1/4 区域）
     cv::Rect roi(0, 0, width / 2, height / 2);
+    // 左上x坐标 左上y坐标 裁剪区域宽度 裁剪区域高度
 
     // 裁剪图像
     cv::Mat croppedImage = image(roi);
