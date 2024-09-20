@@ -22,7 +22,7 @@ int main(){
     cv::GaussianBlur(image, gaussianBlurredImage, cv::Size(9, 9), 1.5); // 高斯滤波
     output(gaussianBlurredImage, "..//output//Gaussianblur.png");
     cv::Mat redBGRImage;
-    cv::Mat mask; // 掩码，就是一张黑白图像，像是粥解包出来的通道图一样
+    cv::Mat mask; // 掩码，就是一张黑白图像
     cv::Scalar lowerRed(0, 0, 100); // 红色的下限
     cv::Scalar upperRed(120, 120, 255); // 红色的上限
     // 创建掩码
@@ -65,9 +65,9 @@ int main(){
         {
             // 画外接矩形
             cv::Rect boundingBox = cv::boundingRect(contours[i]);
-            cv::rectangle(imageWithBoundingBox, boundingBox, cv::Scalar(0, 255, 0), 1); // 绿色边界框，线宽1
+            cv::rectangle(imageWithBoundingBox, boundingBox, cv::Scalar(0, 0, 255), 1); // 红色边界框，线宽1
             // 画轮廓
-            cv::drawContours(contourImage, contours, (int)i, cv::Scalar(0, 255, 0), 1.2);
+            cv::drawContours(contourImage, contours, (int)i, cv::Scalar(0, 0, 255), 1.2);
 
             // 创建一个掩码图像用于距离变换
             cv::Mat contourMask = cv::Mat::zeros(mask.size(), CV_8UC1);
@@ -90,9 +90,118 @@ int main(){
 
             contourIdx++;
         }
+
     }
     output(contourImage, "..//output//contour.png");
     output(imageWithBoundingBox, "..//output//bounding box.png");
+    //灰度图使用最开始创建的那个
+    cv::Mat binaryImage;
+    double thresh = 200; // 阈值，可调
+    double maxValue = 255; // 二值化后最大值
+    cv::threshold(grayImage, binaryImage, thresh, maxValue, cv::THRESH_BINARY);
+    output(binaryImage, "..//output//binary.png");
+    // 创建卷积核
+    int morph_size = 2; // 核大小
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, // 核的形状，这里采用矩形
+                                                cv::Size(2 * morph_size + 1, 2 * morph_size + 1) // 大小
+                                                );
+
+    // 第一次腐蚀，消除小白点噪声
+    cv::Mat firstEroded;
+    cv::erode(binaryImage, firstEroded, element);
+
+    // 第一次膨胀，将图像膨胀到原来大小
+    cv::Mat firstDilated;
+    cv::dilate(firstEroded, firstDilated, element);
+
+    // 第二次膨胀，去除黑色噪点
+    cv::Mat secondDilated;
+    cv::dilate(firstDilated, secondDilated, element);
+
+    // 第二次腐蚀，腐蚀到原来大小
+    cv::Mat secondEroded;
+    cv::erode(secondDilated, secondEroded, element);
+
+    output(firstDilated, "..//output//dilated.png");
+    output(secondEroded, "..//output//eroded.png");
+
+    // 设置种子点
+    cv::Point seedPoint(0, 0); // 根据需要调整种子点的位置
+
+    // 设置填充颜色（对于二值图像，填充颜色为0或255）
+    int newColor = 128; // 中间灰色
+
+    // 定义填充的阈值范围（对于二值图像，通常设置为0）
+    int loDiff = 0;
+    int upDiff = 0;
+
+    // 漫水填充
+    cv::Mat dst = secondEroded.clone();
+    cv::floodFill(  
+                    dst, 
+                    seedPoint, //起始点
+                    cv::Scalar(newColor), // 填充颜色
+                    0, // 是否存储边界矩形
+                    cv::Scalar(loDiff), 
+                    cv::Scalar(upDiff)
+                );
+
+    output(dst, "..//output//flood fill.png");
+
+    // 文字在之前已经绘制完成，现在进行方圆的绘制
+    cv::Mat paintingImage = cv::Mat::zeros(800, 800, CV_8UC3);
+    // 设置圆心和半径
+    cv::Point center(400, 400); // 圆心坐标
+    int radius = 50; // 半径
+    // 绘制圆
+    cv::circle(paintingImage, center, radius, cv::Scalar(0, 0, 255), 2); // 2 表示线条粗细
+
+    // 设置矩形的左上角和右下角坐标
+    cv::Point topLeft(200, 200);
+    cv::Point bottomRight(600, 600);
+    // 绘制矩形
+    cv::rectangle(paintingImage, topLeft, bottomRight, cv::Scalar(255, 0, 0), 2); // 2 表示线条粗细
+    output(paintingImage, "..//output//painting.png");
+
+    // 红色的外轮廓绘制了，此处省略
+
+    // 获取图像中心点
+    cv::Point2f centerToRatate(image.cols / 2.0, image.rows / 2.0);
+
+    // 设置旋转角度
+    double angle = 35.0; // 旋转角度，可以根据需要调整
+
+    // 设置缩放比例
+    double scale = 1.0; // 缩放比例，可以根据需要调整
+
+    // 计算旋转矩阵
+    cv::Mat rotationMatrix = cv::getRotationMatrix2D(centerToRatate, angle, scale);
+
+    // 计算旋转后图像的边界，为了防止丢失信息
+    cv::Rect bbox = cv::RotatedRect(centerToRatate, image.size(), angle).boundingRect();
+
+    // 调整旋转矩阵中的平移部分
+    rotationMatrix.at<double>(0, 2) += bbox.width / 2.0 - centerToRatate.x;
+    rotationMatrix.at<double>(1, 2) += bbox.height / 2.0 - centerToRatate.y;
+
+    // 应用旋转矩阵
+    cv::Mat rotatedImage;
+    cv::warpAffine(image, rotatedImage, rotationMatrix, bbox.size());
+
+    output(rotatedImage, "..//output//rotated.png");
+
+    // 获取图像的宽度和高度
+    int width = image.cols;
+    int height = image.rows;
+
+    // 定义裁剪区域（左上角 1/4 区域）
+    cv::Rect roi(0, 0, width / 2, height / 2);
+
+    // 裁剪图像
+    cv::Mat croppedImage = image(roi);
+
+    output(croppedImage, "..//output//cropped.png");
+
     return 0;
 }
 int output(cv::Mat image, string outputPath){
